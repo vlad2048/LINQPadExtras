@@ -12,15 +12,73 @@ namespace LINQPadExtras;
 /// </summary>
 public static class Con
 {
+	private static CmdState? state;
+	private static CmdState State
+	{
+		get
+		{
+			RestartDetector.OnRestart(nameof(Con), OnRestart);
+			return state!;
+		}
+	}
+	private static void OnRestart()
+	{
+		state = new CmdState();
+	}
+
+
 	/// <summary>
 	/// Console UI
 	/// </summary>
 	public static DumpContainer Root => RootPanel.Root;
 
 	/// <summary>
-	/// Clear the console
+	/// Clear the console and display a new title
 	/// </summary>
-	public static void Clear() => RootPanel.Clear();
+	public static void Start(string title)
+	{
+		RootPanel.Clear();
+		State.Clear();
+		RootPanel.MakeTitle(title);
+	}
+
+	/// <summary>
+	/// Clear the console and display a new title in 3 parts
+	/// </summary>
+	public static void Start(string prefix, string title, string suffix)
+	{
+		RootPanel.Clear();
+		State.Clear();
+		RootPanel.MakeTitleSandwich(prefix, title, suffix);
+	}
+
+	/// <summary>
+	/// Add an artifact to display at the end
+	/// </summary>
+	public static void AddArtifact(string artifact) => State.AddArtifact(artifact);
+
+	/// <summary>
+	/// Display the end title
+	/// </summary>
+	public static void EndSuccess()
+	{
+		RootPanel.MakeTitle("Success");
+		var logPanel = RootPanel.MakeLogPanel();
+		logPanel.Log($"{State.Artifacts.Count} artifacts:");
+		for (var i = 0; i < State.Artifacts.Count; i++)
+			logPanel.LogArtifact(i, State.Artifacts[i]);
+	}
+
+	/// <summary>
+	/// Log a message to the console
+	/// </summary>
+	/// <param name="msg">message</param>
+	public static void Log(string msg)
+	{
+		var logPanel = RootPanel.MakeLogPanel();
+		logPanel.Log(msg);
+	}
+
 
 	/// <summary>
 	/// Run a command in the console
@@ -52,11 +110,13 @@ public static class Con
 
 	private static string RunIn(string exeFile, string workingDirectory, bool leaveOpenAfter, params string[] args)
 	{
-		return Cli.Wrap(exeFile)
+		var cmd = Cli.Wrap(exeFile)
 			.WithWorkingDirectory(workingDirectory)
 			.WithArguments(args)
-			.WithValidation(CommandResultValidation.None)
-			.Run(leaveOpenAfter);
+			.WithValidation(CommandResultValidation.None);
+		var niceExeFile = State.ChangeDir(cmd.TargetFilePath, cmd.WorkingDirPath);
+		return cmd
+			.Run(niceExeFile, leaveOpenAfter);
 	}
 
 	/// <summary>

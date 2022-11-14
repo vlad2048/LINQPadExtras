@@ -9,11 +9,11 @@ static class CmdConsts
 	public static DumpContainer StyleRootPanel(this DumpContainer dc) =>
 		dc
 			.SetMono()
-			.Set("margin", "5px");
+			.Set("padding", "10px");
 
 	public static C StyleCmdPanel<C>(this C div) where C : Control =>
 		div;
-
+	
 	public static C StyleHeaderPanel<C>(this C div) where C : Control =>
 		div
 			.Set("display", "flex")
@@ -48,6 +48,20 @@ static class CmdConsts
 		dc
 			.SetForeColor(ColLogPanel);
 
+
+
+	public static C StyleTitle<C>(this C div) where C : Control =>
+		div
+			.Set("font-size", "24px")
+			.Set("font-weight", "bold")
+			.SetForeColor(ColTitle)
+			.Set("margin", "10px 0");
+
+	public static C StyleTitleHighlight<C>(this C div) where C : Control =>
+		div
+			.SetForeColor(ColTitleHighlight);
+
+
 	public static readonly TimeSpan StatusSpinnerInterval = TimeSpan.FromMilliseconds(150);
 	public const string StatusCol = "#cbd769";
 	public static readonly char[] StatusSpinnerChars =
@@ -76,4 +90,8 @@ static class CmdConsts
 	private const string ColErrSection = "#61221d";
 
 	private const string ColLogPanel = "#ffffff";
+
+	private const string ColTitle = "#c0c0c0";
+
+	private const string ColTitleHighlight = "#ffffff";
 }

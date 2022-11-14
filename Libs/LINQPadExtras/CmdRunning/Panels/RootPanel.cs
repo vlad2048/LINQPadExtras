@@ -1,4 +1,6 @@
 ﻿using LINQPad;
+using LINQPad.Controls;
+using LINQPadExtras.Styling;
 using LINQPadExtras.Utils;
 
 namespace LINQPadExtras.CmdRunning.Panels;
@@ -31,7 +33,11 @@ static class RootPanel
 			.Dump();
 	}
 
-	public static void Clear() => DC.ClearContent();
+	public static void Clear()
+	{
+		RestartDetector.OnRestart(nameof(RootPanel), OnRestart);
+		DC.ClearContent();
+	}
 
 	public static CmdPanel MakeCmdPanel(string exeFile, string args, bool showCmdOnly, bool leaveOpenAfter)
 	{
@@ -47,5 +53,24 @@ static class RootPanel
 		var logPanel = new LogPanel();
 		DC.AppendContent(logPanel.Root);
 		return logPanel;
+	}
+
+	public static void MakeTitleSandwich(string prefix, string title, string suffix)
+	{
+		RestartDetector.OnRestart(nameof(RootPanel), OnRestart);
+		DC.AppendContent(Util.HorizontalRun(true,
+			new Span(prefix).StyleTitle(),
+			new Span(title).StyleTitle().StyleTitleHighlight(),
+			new Span(suffix).StyleTitle()
+		));
+	}
+
+	public static void MakeTitle(string title)
+	{
+		RestartDetector.OnRestart(nameof(RootPanel), OnRestart);
+		DC.AppendContent(
+			Html.Div(title)
+				.StyleTitle()
+		);
 	}
 }

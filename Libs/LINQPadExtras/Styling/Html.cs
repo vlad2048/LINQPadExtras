@@ -16,8 +16,6 @@ public static class Html
 			}
 		};
 
-	public static Span Span(string str) => new(str);
-
 
 	public static C Set<C>(this C ctrl, string attrName, string attrVal)
 		where C : Control

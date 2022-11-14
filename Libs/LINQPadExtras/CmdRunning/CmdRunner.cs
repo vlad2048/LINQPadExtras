@@ -2,27 +2,15 @@
 using CliWrap;
 using CliWrap.Exceptions;
 using LINQPadExtras.CmdRunning.Panels;
-using LINQPadExtras.Utils;
-using LINQPadExtras.Utils.Exts;
 
 namespace LINQPadExtras.CmdRunning;
 
 static class CmdRunner
 {
-	private static string? curFolder;
-
-	private static void OnRestart()
+	public static string Run(this Command cmd, string niceExeFile, bool leaveOpenAfter)
 	{
-		curFolder = null;
-	}
-
-	public static string Run(this Command cmd, bool leaveOpenAfter)
-	{
-		RestartDetector.OnRestart(nameof(CmdRunner), OnRestart);
-
-		var exeFile = ShowDirChangeAndSimplifyExe(cmd.TargetFilePath, cmd.WorkingDirPath);
 		var args = cmd.Arguments;
-		var cmdPanel = RootPanel.MakeCmdPanel(exeFile, args, false, leaveOpenAfter);
+		var cmdPanel = RootPanel.MakeCmdPanel(niceExeFile, args, false, leaveOpenAfter);
 
 		try
 		{
@@ -50,20 +38,5 @@ static class CmdRunner
 			cmdPanel.Complete(false);
 			throw;
 		}
-	}
-
-	private static string ShowDirChangeAndSimplifyExe(string exeFile, string workingDirectory)
-	{
-		if (workingDirectory != curFolder)
-		{
-			curFolder = workingDirectory;
-			Con.ShowCmd("cd", $"/d {curFolder.QuoteIFN()}");
-		}
-
-		return (Path.GetDirectoryName(exeFile) == workingDirectory) switch
-		{
-			true => Path.GetFileName(exeFile),
-			false => exeFile
-		};
 	}
 }
