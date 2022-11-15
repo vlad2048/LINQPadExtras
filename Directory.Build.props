@@ -1,19 +1,22 @@
-﻿<Project>
-  <PropertyGroup>
-    <LangVersion>preview</LangVersion>
-    <EnablePreviewFeatures>True</EnablePreviewFeatures>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <DebugType>embedded</DebugType>
-    <Version>0.0.3</Version>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Authors>vlad2048</Authors>
-    <Description>LINQPad utility functions</Description>
-    <PackageTags>LINQPad</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageProjectUrl>https://github.com/vlad2048/LINQPadExtras</PackageProjectUrl>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="$(SolutionDir)\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
+<Project>
+
+	<PropertyGroup>
+		<LangVersion>preview</LangVersion>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<DebugType>embedded</DebugType>
+		<Version>0.0.3</Version>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Authors>vlad2048</Authors>
+		<Description>LINQPad utility functions</Description>
+		<PackageTags>LINQPad</PackageTags>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/vlad2048/LINQPadExtras</PackageProjectUrl>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="$(SolutionDir)\README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
 </Project>
