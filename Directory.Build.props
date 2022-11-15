@@ -10,10 +10,10 @@
     <Authors>vlad2048</Authors>
     <Description>LINQPad utility functions</Description>
     <PackageTags>LINQPad</PackageTags>
-    <PackageReadmeFile>Readme.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/vlad2048/LINQPadExtras</PackageProjectUrl>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="..\..\Readme.md" Pack="true" PackagePath="\" />
+    <None Include="$(SolutionDir)\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
