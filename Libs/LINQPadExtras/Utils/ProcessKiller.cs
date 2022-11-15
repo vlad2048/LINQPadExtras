@@ -1,4 +1,5 @@
-﻿using LINQPad;
+﻿using System.Diagnostics;
+using LINQPad;
 using LINQPadExtras.CmdRunning.Panels;
 
 namespace LINQPadExtras.Utils;
@@ -12,76 +13,111 @@ static class ProcessKiller
 		bool isFolder
 	)
 	{
-	retry:
+		var loc = new Loc(path, isFolder, actionName);
+
+		var sorted = HandleLock(loc, null);
+		if (!sorted)
+			throw new ArgumentException($"Failed {loc.ActionName} @ '{loc.Path}' (isFolder:{loc.IsFolder})");
+
+		retry:
 		try
 		{
 			action();
 		}
-		catch (SystemException ex)
+		catch (Exception ex)
 		{
-			if (ex is not IOException and not UnauthorizedAccessException)
-				throw;
+			var retry = HandleLock(loc, ex);
+			if (retry)
+				goto retry;
+			throw;
+		}
+	}
 
-			try
+	private record Loc(string Path, bool IsFolder, string ActionName)
+	{
+		public List<Process> GetProcessesLockingIt() => IsFolder switch
+		{
+			false => LockFinder.WhoIsLockingFile(Path),
+			true => LockFinder.WhoIsLockingFolder(Path),
+		};
+	}
+
+
+	private static bool HandleLock(
+		Loc loc,
+		Exception? ex
+	)
+	{
+		if (ex is not null && ex is not IOException and not UnauthorizedAccessException)
+			throw ex;
+
+		var logPanel = new Lazy<LogPanel>(RootPanel.MakeLogPanel);
+		LogPanel LogPanel() => logPanel.Value;
+
+		try
+		{
+			var procs = loc.GetProcessesLockingIt();
+			if (ex == null && procs.Count == 0)
+				return true;
+
+			LogPanel().LogNewline();
+			if (ex == null)
 			{
-				var logPanel = RootPanel.MakeLogPanel();
+				LogPanel().Log($"Detected a lock before {loc.ActionName}");
+			}
+			else
+			{
+				LogPanel().Log($"Exception while {loc.ActionName}");
+				LogPanel().Log(ex.Message);
+			}
 
-				logPanel.LogNewline();
-				logPanel.Log($"Failed to {actionName}");
-				logPanel.Log(ex.Message);
-				logPanel.LogNewline();
-				var procs = isFolder switch
-				{
-					false => LockFinder.WhoIsLockingFile(path),
-					true => LockFinder.WhoIsLockingFolder(path),
-				};
-				logPanel.LogTitle("Processes holding the lock");
-				var thisProcId = Environment.ProcessId;
-				foreach (var proc in procs)
-				{
-					var procId = proc.Id;
-					var procName = proc.ProcessName;
-					var procModuleName = proc.MainModule?.FileName;
-					var procWinTitle = proc.MainWindowTitle;
-					logPanel.Log($"  {procName}");
-					logPanel.Log($"  {new string('-', procName.Length)}");
-					logPanel.Log($"    Id      : {procId}");
-					logPanel.Log($"    Module  : {procModuleName}");
-					logPanel.Log($"    WinTitle: {procWinTitle}");
-					if (procId == thisProcId)
-						logPanel.Log("    !! This is this Process -> cannot kill myself");
+			LogPanel().LogNewline();
+			LogPanel().LogTitle("Processes holding the lock");
+			var thisProcId = Environment.ProcessId;
+			foreach (var proc in procs)
+			{
+				var procId = proc.Id;
+				var procName = proc.ProcessName;
+				var procModuleName = proc.MainModule?.FileName;
+				var procWinTitle = proc.MainWindowTitle;
+				LogPanel().Log($"  {procName}");
+				LogPanel().Log($"  {new string('-', procName.Length)}");
+				LogPanel().Log($"    Id      : {procId}");
+				LogPanel().Log($"    Module  : {procModuleName}");
+				LogPanel().Log($"    WinTitle: {procWinTitle}");
+				if (procId == thisProcId)
+					LogPanel().Log("    !! This is this Process -> cannot kill myself");
 
-					logPanel.LogNewline();
-				}
+				LogPanel().LogNewline();
+			}
 
-				var msg = procs.Any() ? "Kill and retry (y/n) ?" : "Retry (y/n) ?";
-				logPanel.LogNewline();
-				logPanel.Log(msg);
-				if (Util.ReadLine(msg).ToLowerInvariant().Trim() == "y")
+			var msg = procs.Any() ? "Kill and retry (y/n) ?" : "Retry (y/n) ?";
+			LogPanel().LogNewline();
+			LogPanel().Log(msg);
+			if (Util.ReadLine(msg).ToLowerInvariant().Trim() == "y")
+			{
+				procs.ForEach(proc =>
 				{
-					procs.ForEach(proc =>
+					if (proc.Id == thisProcId)
 					{
-						if (proc.Id == thisProcId)
-						{
-							logPanel.Log($"  skipping {proc.ProcessName}");
-							return;
-						}
+						LogPanel().Log($"  skipping {proc.ProcessName}");
+						return;
+					}
 
-						logPanel.Log($"  killing {proc.ProcessName}");
-						proc.Kill();
-						logPanel.Log($"  killed {proc.ProcessName}");
-					});
-					Thread.Sleep(TimeSpan.FromMilliseconds(200));
-					goto retry;
-				}
+					LogPanel().Log($"  killing {proc.ProcessName}");
+					proc.Kill();
+					LogPanel().Log($"  killed {proc.ProcessName}");
+				});
+				Thread.Sleep(TimeSpan.FromMilliseconds(200));
+				return true;
+			}
 
-				throw;
-			}
-			catch (Exception ex2)
-			{
-				$"Exception in catch: {ex2}".Dump();
-				throw;
-			}
+			return false;
+		}
+		catch (Exception exInner)
+		{
+			LogPanel().Log($"ExceptionInner: {exInner.Message}");
+			throw;
 		}
 	}
 }

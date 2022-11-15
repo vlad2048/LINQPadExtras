@@ -129,7 +129,7 @@ public static class Con
 		ShowCmd("del", $"/q {file.QuoteIFN()}");
 		ProcessKiller.RunWithKillProcessRetry(
 			() => File.Delete(file),
-			$"delete file: '{file}'",
+			$"deleting file: '{file}'",
 			file,
 			false
 		);
@@ -145,7 +145,7 @@ public static class Con
 		ShowCmd("rmdir", $"/s /q {folder.QuoteIFN()}");
 		ProcessKiller.RunWithKillProcessRetry(
 			() => Directory.Delete(folder, true),
-			$"delete folder: '{folder}'",
+			$"deleting folder: '{folder}'",
 			folder,
 			true
 		);

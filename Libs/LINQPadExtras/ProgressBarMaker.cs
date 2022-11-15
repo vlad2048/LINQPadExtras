@@ -1,7 +1,5 @@
 ﻿using LINQPad;
 using PowRxVar;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 using LINQPad.Uncapsulator;
 
 namespace LINQPadExtras;
@@ -29,7 +27,6 @@ public static class ProgressBarMaker
 		var progressBar = new Util.ProgressBar(title).Dump();
 		var dc = progressBar.Uncapsulate()._dumpContainer;
 		val
-			.ObserveOn(NewThreadScheduler.Default)
 			.Subscribe(v =>
 			{
 				var isEnd = Math.Abs(1.0 - v) < 0.001;
@@ -39,6 +36,7 @@ public static class ProgressBarMaker
 					false => string.Empty
 				};
 				progressBar.Fraction = v;
+				progressBar.Percent = (int)(v * 100);
 			}).D(d);
 
 		return (val, d);
