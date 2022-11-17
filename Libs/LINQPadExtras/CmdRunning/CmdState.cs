@@ -1,17 +1,40 @@
-﻿using LINQPadExtras.Utils.Exts;
+﻿using System.Windows.Forms;
+using LINQPadExtras.Utils.Exts;
+using PowBasics.CollectionsExt;
+using PowRxVar;
 
 namespace LINQPadExtras.CmdRunning;
 
 class CmdState
 {
+	private readonly IRwVar<bool> isInCmd = Var.Make(false);
+	private readonly List<string> cmdLines = new();
+
 	public string? CurFolder { get; private set; }
 	public List<string> Artifacts { get; } = new();
+	public bool DryRun { get; set; }
+	public IRoVar<bool> IsInCmd => isInCmd;
 
-	public void Clear()
+	public void Clear(bool dryRun)
 	{
 		CurFolder = null;
 		Artifacts.Clear();
+		DryRun = dryRun;
+		cmdLines.Clear();
+		isInCmd.V = true;
 	}
+
+	public void End()
+	{
+		DryRun = false;
+		isInCmd.V = false;
+	}
+
+	public void AddCmdLine(string line) => cmdLines.Add(line);
+
+	public void CopyCmdLinesToClipboard() => Clipboard.SetText(cmdLines.JoinText(Environment.NewLine) + Environment.NewLine);
+
+
 
 	public void AddArtifact(string artifact) => Artifacts.Add(artifact);
 

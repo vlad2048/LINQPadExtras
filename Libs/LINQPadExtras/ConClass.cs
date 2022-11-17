@@ -4,6 +4,8 @@ using LINQPadExtras.CmdRunning;
 using LINQPadExtras.CmdRunning.Panels;
 using LINQPadExtras.Utils;
 using LINQPadExtras.Utils.Exts;
+using PowBasics.CollectionsExt;
+using PowRxVar;
 
 namespace LINQPadExtras;
 
@@ -32,42 +34,49 @@ public static class Con
 	/// </summary>
 	public static DumpContainer Root => RootPanel.Root;
 
+	public static IRoVar<bool> IsInCmd => State.IsInCmd;
+
 	/// <summary>
 	/// Clear the console and display a new title
 	/// </summary>
-	public static void Start(string title)
+	public static void Start(string title, bool dryRun)
 	{
 		RootPanel.Clear();
-		State.Clear();
+		State.Clear(dryRun);
 		RootPanel.MakeTitle(title);
 	}
 
 	/// <summary>
 	/// Clear the console and display a new title in 3 parts
 	/// </summary>
-	public static void Start(string prefix, string title, string suffix)
+	public static void Start(string prefix, string title, string suffix, bool dryRun)
 	{
 		RootPanel.Clear();
-		State.Clear();
+		State.Clear(dryRun);
 		RootPanel.MakeTitleSandwich(prefix, title, suffix);
 	}
-
-	/// <summary>
-	/// Add an artifact to display at the end
-	/// </summary>
-	public static void AddArtifact(string artifact) => State.AddArtifact(artifact);
 
 	/// <summary>
 	/// Display the end title
 	/// </summary>
 	public static void EndSuccess()
 	{
+		State.End();
 		RootPanel.MakeTitle("Success");
 		var logPanel = RootPanel.MakeLogPanel();
 		logPanel.Log($"{State.Artifacts.Count} artifacts:");
 		for (var i = 0; i < State.Artifacts.Count; i++)
 			logPanel.LogArtifact(i, State.Artifacts[i]);
+
+		RootPanel.MakeCopyToClipboardButton(State.CopyCmdLinesToClipboard);
 	}
+
+	public static void EndCancel()
+	{
+		State.End();
+		RootPanel.MakeTitle("Cancelled");
+	}
+
 
 	/// <summary>
 	/// Log a message to the console
@@ -78,7 +87,13 @@ public static class Con
 		var logPanel = RootPanel.MakeLogPanel();
 		logPanel.Log(msg);
 	}
+	
+	public static bool CheckForFolderLocks(params string[] folders) => ProcessKiller.CheckForFoldersLock(folders);
 
+	/// <summary>
+	/// Add an artifact to display at the end
+	/// </summary>
+	public static void AddArtifact(string artifact) => State.AddArtifact(artifact);
 
 	/// <summary>
 	/// Run a command in the console
@@ -115,8 +130,9 @@ public static class Con
 			.WithArguments(args)
 			.WithValidation(CommandResultValidation.None);
 		var niceExeFile = State.ChangeDir(cmd.TargetFilePath, cmd.WorkingDirPath);
+		State.AddCmdLine($"{exeFile} {args.JoinText(" ")}");
 		return cmd
-			.Run(niceExeFile, leaveOpenAfter);
+			.Run(niceExeFile, leaveOpenAfter, State.DryRun);
 	}
 
 	/// <summary>
@@ -127,12 +143,25 @@ public static class Con
 	{
 		if (!File.Exists(file)) return;
 		ShowCmd("del", $"/q {file.QuoteIFN()}");
+		if (State.DryRun) return;
 		ProcessKiller.RunWithKillProcessRetry(
 			() => File.Delete(file),
 			$"deleting file: '{file}'",
 			file,
 			false
 		);
+	}
+
+	/// <summary>
+	/// Empty a folder
+	/// </summary>
+	/// <param name="folder">folder</param>
+	public static void EmptyFolder(string folder)
+	{
+		if (!Directory.Exists(folder)) return;
+		if (Directory.GetFileSystemEntries(folder).Length == 0) return;
+		DeleteFolder(folder);
+		MakeFolder(folder);
 	}
 
 	/// <summary>
@@ -143,6 +172,7 @@ public static class Con
 	{
 		if (!Directory.Exists(folder)) return;
 		ShowCmd("rmdir", $"/s /q {folder.QuoteIFN()}");
+		if (State.DryRun) return;
 		ProcessKiller.RunWithKillProcessRetry(
 			() => Directory.Delete(folder, true),
 			$"deleting folder: '{folder}'",
@@ -159,22 +189,13 @@ public static class Con
 	{
 		if (Directory.Exists(folder)) return;
 		ShowCmd("mkdir", folder.QuoteIFN());
+		if (State.DryRun) return;
 		Directory.CreateDirectory(folder);
 	}
 
-	/// <summary>
-	/// Empty a folder
-	/// </summary>
-	/// <param name="folder">folder</param>
-	public static void EmptyFolder(string folder)
+	internal static void ShowCmd(string exeFile, string args)
 	{
-		if (Directory.Exists(folder))
-		{
-			if (Directory.GetFileSystemEntries(folder).Length == 0) return;
-			DeleteFolder(folder);
-		}
-
+		State.AddCmdLine($"{exeFile} {args}");
+		RootPanel.MakeCmdPanel(exeFile, args, true, false);
 	}
-
-	internal static void ShowCmd(string exeFile, string args) => RootPanel.MakeCmdPanel(exeFile, args, true, false);
 }

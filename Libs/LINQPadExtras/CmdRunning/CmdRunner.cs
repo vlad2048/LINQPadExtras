@@ -7,10 +7,11 @@ namespace LINQPadExtras.CmdRunning;
 
 static class CmdRunner
 {
-	public static string Run(this Command cmd, string niceExeFile, bool leaveOpenAfter)
+	public static string Run(this Command cmd, string niceExeFile, bool leaveOpenAfter, bool dryRun)
 	{
 		var args = cmd.Arguments;
-		var cmdPanel = RootPanel.MakeCmdPanel(niceExeFile, args, false, leaveOpenAfter);
+		var cmdPanel = RootPanel.MakeCmdPanel(niceExeFile, args, dryRun, leaveOpenAfter);
+		if (dryRun) return string.Empty;
 
 		try
 		{

@@ -39,6 +39,11 @@ static class RootPanel
 		DC.ClearContent();
 	}
 
+	public static void MakeCopyToClipboardButton(Action action)
+	{
+		DC.AppendContent(new Button("Copy to clipbard", _ => action()));
+	}
+
 	public static CmdPanel MakeCmdPanel(string exeFile, string args, bool showCmdOnly, bool leaveOpenAfter)
 	{
 		RestartDetector.OnRestart(nameof(RootPanel), OnRestart);

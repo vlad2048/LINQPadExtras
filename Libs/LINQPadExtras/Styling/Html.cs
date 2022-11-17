@@ -2,6 +2,7 @@
 using LINQPadExtras.Styling.Utils;
 using System.Runtime.CompilerServices;
 using LINQPad;
+using PowRxVar;
 
 namespace LINQPadExtras.Styling;
 
@@ -16,6 +17,17 @@ public static class Html
 			}
 		};
 
+	public static Hyperlink Hyperlink(string str, Action action, IRoVar<bool> enabled) => new(str, _ =>
+	{
+		if (!enabled.V) return;
+		action();
+	});
+
+	public static FieldSet FieldSet(string str, object obj) => new(str, new DumpContainer(obj));
+
+	public static FieldSet FieldSet(string str, params Control[] ctrls) => new(str, new DumpContainer(ctrls));
+
+	public static CheckBox CheckBox(string str, IRwVar<bool> v) => new(str, v.V, _ => v.V = !v.V);
 
 	public static C Set<C>(this C ctrl, string attrName, string attrVal)
 		where C : Control

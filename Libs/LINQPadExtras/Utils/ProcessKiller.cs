@@ -1,11 +1,84 @@
 ﻿using System.Diagnostics;
 using LINQPad;
 using LINQPadExtras.CmdRunning.Panels;
+using PowBasics.CollectionsExt;
 
 namespace LINQPadExtras.Utils;
 
 static class ProcessKiller
 {
+	public static bool CheckForFoldersLock(params string[] folders)
+	{
+		foreach (var folder in folders)
+		{
+			var cancel = CheckForFolderLock(folder);
+			if (cancel)
+				return true;
+		}
+		return false;
+	}
+
+	private static bool CheckForFolderLock(string folder)
+	{
+		Process[] GetLockProcs() => LockFinder.WhoIsLockingFolder(folder).ToArray();
+
+		var isLocked = true;
+		while (isLocked)
+		{
+			var procs = GetLockProcs();
+			isLocked = procs.Any();
+			if (isLocked)
+			{
+				var cancel = AskUserToKillProcesses(folder, procs);
+				if (cancel)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	private static bool AskUserToKillProcesses(string folder, Process[] procs)
+	{
+		var l = RootPanel.MakeLogPanel();
+		l.LogNewline();
+		l.LogTitle($"Lock detected on '{folder}'");
+		l.LogProcs(procs);
+		return l.AskUserOrExit();
+	}
+
+	private static void LogProcs(this LogPanel l, Process[] procs)
+	{
+		string Fmt(string? s) => s switch
+		{
+			not null => s,
+			null => "_"
+		};
+		var thisProcId = Environment.ProcessId;
+		for (var i = 0; i < procs.Length; i++)
+		{
+			var proc = procs[i];
+			var myselfStr = (proc.Id == thisProcId) switch
+			{
+				true => " (this is this process itself !)",
+				false => string.Empty
+			};
+			l.Log($"  [{i}] Process {proc.ProcessName}{myselfStr}");
+			l.Log($"    id    : {proc.Id}");
+			l.Log($"    module: {Fmt(proc.MainModule?.FileName)}");
+			l.Log($"    title : {proc.MainWindowTitle}");
+		}
+	}
+
+	private static bool AskUserOrExit(this LogPanel l)
+	{
+		var msg = "Kill and retry (y/n) ?";
+		l.LogNewline();
+		l.Log(msg);
+		return Util.ReadLine(msg).ToLowerInvariant().Trim() != "y";
+	}
+
+
+
 	public static void RunWithKillProcessRetry(
 		Action action,
 		string actionName,
@@ -14,11 +87,6 @@ static class ProcessKiller
 	)
 	{
 		var loc = new Loc(path, isFolder, actionName);
-
-		var sorted = HandleLock(loc, null);
-		if (!sorted)
-			throw new ArgumentException($"Failed {loc.ActionName} @ '{loc.Path}' (isFolder:{loc.IsFolder})");
-
 		retry:
 		try
 		{
