@@ -29,14 +29,17 @@ static class CssUtils
 
         if (varMap.TryGetValue(varName, out var existingVal))
         {
-            SetVarJS(varName, val);
-            varMap[varName] = val;
+	        if (val != existingVal)
+	        {
+		        varMap.Remove(varName);
+		        nonVarSet.Add(varName);
+		        return val;
+	        }
         }
-        else if (val != existingVal)
+        else
         {
-	        varMap.Remove(varName);
-	        nonVarSet.Add(varName);
-	        return val;
+	        SetVarJS(varName, val);
+	        varMap[varName] = val;
         }
         return $"var(--{varName})";
     }
