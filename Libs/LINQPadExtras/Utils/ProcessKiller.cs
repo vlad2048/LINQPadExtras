@@ -1,23 +1,17 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using LINQPad;
 using LINQPadExtras.CmdRunning.Panels;
-using PowBasics.CollectionsExt;
 
 namespace LINQPadExtras.Utils;
 
 static class ProcessKiller
 {
-	public static bool CheckForFoldersLock(params string[] folders)
-	{
-		foreach (var folder in folders)
-		{
-			var cancel = CheckForFolderLock(folder);
-			if (cancel)
-				return true;
-		}
-		return false;
-	}
-
+	public static bool CheckForFoldersLock(params string[] folders) =>
+		folders
+			.Where(Directory.Exists)
+			.Any(CheckForFolderLock);
+	
 	private static bool CheckForFolderLock(string folder)
 	{
 		Process[] GetLockProcs() => LockFinder.WhoIsLockingFolder(folder).ToArray();
@@ -29,17 +23,18 @@ static class ProcessKiller
 			isLocked = procs.Any();
 			if (isLocked)
 			{
-				var cancel = AskUserToKillProcesses(folder, procs);
+				var l = RootPanel.MakeLogPanel();
+				var cancel = l.AskUserToKillProcesses(folder, procs);
 				if (cancel)
 					return true;
+				l.KillProcs(procs);
 			}
 		}
 		return false;
 	}
 
-	private static bool AskUserToKillProcesses(string folder, Process[] procs)
+	private static bool AskUserToKillProcesses(this LogPanel l, string folder, Process[] procs)
 	{
-		var l = RootPanel.MakeLogPanel();
 		l.LogNewline();
 		l.LogTitle($"Lock detected on '{folder}'");
 		l.LogProcs(procs);
@@ -66,6 +61,28 @@ static class ProcessKiller
 			l.Log($"    id    : {proc.Id}");
 			l.Log($"    module: {Fmt(proc.MainModule?.FileName)}");
 			l.Log($"    title : {proc.MainWindowTitle}");
+		}
+	}
+
+	private static void KillProcs(this LogPanel l, Process[] procs)
+	{
+		var thisProcId = Environment.ProcessId;
+		for (var i = 0; i < procs.Length; i++)
+		{
+			var proc = procs[i];
+			var sb = new StringBuilder($"[{i + 1}/{procs.Length}] killing {proc.Id}");
+			if (proc.Id == thisProcId)
+				sb.Append(" (this is myself!)");
+			try
+			{
+				proc.Kill(true);
+				sb.AppendLine(" -> done");
+			}
+			catch (Exception ex)
+			{
+				sb.AppendLine($" -> exception:{ex.Message}");
+			}
+			l.Log(sb.ToString());
 		}
 	}
 

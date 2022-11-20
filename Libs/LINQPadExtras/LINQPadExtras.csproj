@@ -3,14 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net7.0-windows</TargetFramework>
 		<UseWindowsForms>true</UseWindowsForms>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<Reference Include="LINQPad.Runtime">
-			<HintPath>C:\Utils\Dev\LINQPad7_beta\LINQPad.Runtime.dll</HintPath>
-		</Reference>
-	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="CliWrap" Version="3.5.0" />
@@ -22,6 +15,12 @@
 
 	<ItemGroup>
 		<Using Remove="System.Windows.Forms" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="LINQPad.Runtime">
+	    <HintPath>..\..\..\..\..\Program Files\LINQPad7\LINQPad.Runtime.dll</HintPath>
+	  </Reference>
 	</ItemGroup>
 
 </Project>
