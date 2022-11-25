@@ -58,7 +58,7 @@ class CmdPanel : IDisposable
 				.WithClass("cmdpanel");
 
 		WhenComplete
-			.Delay(TimeSpan.FromSeconds(1))
+			.Delay(TimeSpan.FromSeconds(3))
 			.Subscribe(success =>
 			{
 				headerDiv.CssClass = "cmdpanel-header cmdpanel-header-active";
@@ -71,7 +71,14 @@ class CmdPanel : IDisposable
 
 		headerDiv.WhenClick()
 			.Where(_ => statusBtn.State.V is not StatusState.None and not StatusState.Running)
-			.Subscribe(_ => statusBtn.State.V = statusBtn.State.V == StatusState.Closed ? StatusState.Open : StatusState.Closed).D(d);
+			.Subscribe(_ =>
+			{
+				statusBtn.State.V = statusBtn.State.V switch
+				{
+					StatusState.Closed => StatusState.Open,
+					_ => StatusState.Closed
+				};
+			}).D(d);
 
 		DumpContainer? sectionDC = null;
 		var sectionStd = Std.Out;

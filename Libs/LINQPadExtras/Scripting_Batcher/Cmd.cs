@@ -180,7 +180,7 @@ class Cmd : ICmd, IDisposable
 		{
 			var sbOut = new StringBuilder();
 
-			cmd
+			var res = cmd
 				.WithStandardOutputPipe(
 					PipeTarget.Merge(
 						PipeTarget.ToDelegate(panel.StdOut),
@@ -188,10 +188,13 @@ class Cmd : ICmd, IDisposable
 					)
 				)
 				.WithStandardErrorPipe(PipeTarget.ToDelegate(panel.StdErr))
-				.WithValidation(CommandResultValidation.ZeroExitCode)
+				.WithValidation(CommandResultValidation.None)
 				.ExecuteAsync(cancelToken)
 				.GetAwaiter()
 				.GetResult();
+
+			if (res.ExitCode != 0)
+				Cancel($"Error running: {exeFile} {cmd.Arguments}");
 
 			panel.Complete(true);
 
