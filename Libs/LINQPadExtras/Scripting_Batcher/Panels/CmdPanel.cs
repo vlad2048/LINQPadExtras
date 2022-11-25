@@ -1,12 +1,19 @@
 ﻿using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using LINQPad;
 using LINQPad.Controls;
-using LINQPadExtras.Styling;
-using LINQPadExtras.Utils;
+using LINQPad;
 using PowRxVar;
+using System.Reactive.Subjects;
+using LINQPadExtras.Scripting_Batcher.Panels.Ctrls;
+using LINQPadExtras.Utils.Exts;
 
-namespace LINQPadExtras.CmdRunning.Panels;
+namespace LINQPadExtras.Scripting_Batcher.Panels;
+
+enum CmdPanelMode
+{
+	Normal,
+	LeaveOpen,
+	LogCmdOnly
+}
 
 class CmdPanel : IDisposable
 {
@@ -30,34 +37,37 @@ class CmdPanel : IDisposable
 	public void StdErr(string str) => whenStd.OnNext(new Msg(Std.Err, str));
 	public void Complete(bool success) => whenComplete.OnNext(success);
 
-	public CmdPanel(string exeFile, string args, bool showCmdOnly, bool leaveOpenAfter)
+	public CmdPanel(string exeFile, string args, CmdPanelMode mode)
 	{
 		StatusBtn statusBtn;
 		Div headerDiv;
+		Div outputDiv;
 		DumpContainer outputDC;
 
 		Root =
 			new Div(
 					headerDiv = new Div(
-							(statusBtn = new StatusBtn(showCmdOnly).D(d)).Root,
-							new Span(exeFile).StyleTitleExePanel(),
-							new Span(args).StyleTitleArgsPanel()
-						)
-						.StyleHeaderPanel(),
+							(statusBtn = new StatusBtn(mode == CmdPanelMode.LogCmdOnly).D(d)).Root,
+							new Span(exeFile).WithClass("cmdpanel-header-exe"),
+							new Span(args).WithClass("cmdpanel-header-args")
+						).MultiThread()
+						.WithClass("cmdpanel-header"),
 
-					outputDC = new DumpContainer()
-						.StyleOutputPanel()
+					outputDiv = new Div(outputDC = new DumpContainer()).WithClass("cmdpanel-output")
 				)
-				.StyleCmdPanel();
+				.WithClass("cmdpanel");
 
-		WhenComplete.Subscribe(success =>
-		{
-			statusBtn.State.V = (success && !leaveOpenAfter) switch
+		WhenComplete
+			.Delay(TimeSpan.FromSeconds(1))
+			.Subscribe(success =>
 			{
-				true => StatusState.Closed,
-				false => StatusState.Open
-			};
-		}).D(d);
+				headerDiv.CssClass = "cmdpanel-header cmdpanel-header-active";
+				statusBtn.State.V = (success && mode == CmdPanelMode.Normal) switch
+				{
+					true => StatusState.Closed,
+					false => StatusState.Open
+				};
+			}).D(d);
 
 		headerDiv.WhenClick()
 			.Where(_ => statusBtn.State.V is not StatusState.None and not StatusState.Running)
@@ -72,17 +82,17 @@ class CmdPanel : IDisposable
 				if (sectionDC == null || msg.Std != sectionStd)
 				{
 					sectionStd = msg.Std;
-					sectionDC = new DumpContainer().StyleSectionPanel(msg.Std == Std.Err);
-					outputDC.AppendContent(sectionDC);
+					sectionDC = new DumpContainer();
+					outputDC.AppendContent(new Div(sectionDC).WithClass(msg.Std == Std.Err ? "cmdpanel-output-stderr" : "cmdpanel-output-stdout"));
 				}
-				var lineDiv = Html.Div(msg.Str);
+				var lineDiv = new Div(new Span(msg.Str));
 				sectionDC.AppendContent(lineDiv);
 			}).D(d);
 
 		statusBtn.State
 			.Subscribe(state =>
 			{
-				outputDC.Set("display", state is StatusState.None or StatusState.Closed ? "none" : "block");
+				outputDiv.Set("display", state is StatusState.None or StatusState.Closed ? "none" : "block");
 			}).D(d);
 	}
 }

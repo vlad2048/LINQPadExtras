@@ -1,12 +1,11 @@
 ﻿using System.Runtime.CompilerServices;
 using LINQPad;
 using LINQPad.Controls;
-using LINQPadExtras.Styling.Utils;
 using PowRxVar;
 
-namespace LINQPadExtras.Styling;
+namespace LINQPadExtras.Utils.Exts;
 
-public static class StyleSetters
+public static class ControlSettersExt
 {
 	// ********
 	// * Base *
@@ -152,10 +151,10 @@ public static class StyleSetters
 	// * Colors *
 	// **********
 	public static C SetForeColor<C>(this C ctrl, string col, [CallerArgumentExpression(nameof(col))] string? valExpr = null) where C : Control =>
-		ctrl.Set("color", CssUtils.GetVar(col, valExpr));
+		ctrl.Set("color", CssVars.Get(col, valExpr));
 
 	public static DumpContainer SetForeColor(this DumpContainer dc, string col, [CallerArgumentExpression(nameof(col))] string? valExpr = null) =>
-		dc.Set("color", CssUtils.GetVar(col, valExpr));
+		dc.Set("color", CssVars.Get(col, valExpr));
 	
 	public static C SetForeColorOpt<C>(this C ctrl, string? col, [CallerArgumentExpression(nameof(col))] string? valExpr = null) where C : Control => col switch
 	{
@@ -173,10 +172,10 @@ public static class StyleSetters
 
 
 	public static C SetBackColor<C>(this C ctrl, string col, [CallerArgumentExpression(nameof(col))] string? valExpr = null) where C : Control =>
-		ctrl.Set("background-color", CssUtils.GetVar(col, valExpr));
+		ctrl.Set("background-color", CssVars.Get(col, valExpr));
 
 	public static DumpContainer SetBackColor(this DumpContainer dc, string col, [CallerArgumentExpression(nameof(col))] string? valExpr = null) =>
-		dc.Set("background-color", CssUtils.GetVar(col, valExpr));
+		dc.Set("background-color", CssVars.Get(col, valExpr));
 
 	public static C SetBackColorOpt<C>(this C ctrl, string? col, [CallerArgumentExpression(nameof(col))] string? valExpr = null) where C : Control => col switch
 	{

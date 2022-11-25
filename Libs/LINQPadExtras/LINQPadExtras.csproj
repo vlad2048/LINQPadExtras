@@ -1,26 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net7.0-windows</TargetFramework>
-		<UseWindowsForms>true</UseWindowsForms>
-	</PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="CliWrap" Version="3.5.0" />
-		<PackageReference Include="PowBasics" Version="0.0.4" />
-		<PackageReference Include="PowMaybe" Version="0.0.4" />
-		<PackageReference Include="PowRxVar" Version="0.0.7" />
-		<PackageReference Include="PowRxVar.Maybe" Version="0.0.7" />
-	</ItemGroup>
+  <ItemGroup>
+    <Reference Include="LINQPad.Runtime">
+      <HintPath>..\..\..\..\..\Program Files\LINQPad7\LINQPad.Runtime.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
-	<ItemGroup>
-		<Using Remove="System.Windows.Forms" />
-	</ItemGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<Reference Include="LINQPad.Runtime">
-			<HintPath>..\..\..\..\..\Program Files\LINQPad7\LINQPad.Runtime.dll</HintPath>
-		</Reference>
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CliWrap" Version="3.5.0" />
+    <PackageReference Include="PowBasics" Version="0.0.4" />
+    <PackageReference Include="PowRxVar" Version="0.0.9" />
+    <PackageReference Include="PowRxVar.Maybe" Version="0.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Scripting_Batcher\Panels\Ctrls\" />
+    <Folder Include="Scripting_Batcher\Utils\" />
+    <Folder Include="Utils\Exts\" />
+  </ItemGroup>
 
 </Project>

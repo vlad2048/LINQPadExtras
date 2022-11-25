@@ -1,7 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using LINQPadExtras.Utils;
 
-namespace LINQPadExtras.Utils;
+namespace LINQPadExtras.Scripting_LockChecker.Utils;
 
 static class LockFinder
 {

@@ -1,11 +1,11 @@
-﻿using System.Reactive;
-using System.Reactive.Linq;
+﻿using System.Reactive.Linq;
+using System.Reactive;
 using LINQPad.Controls;
 using PowRxVar;
 
-namespace LINQPadExtras.Utils;
+namespace LINQPadExtras.Utils.Exts;
 
-static class EventExt
+static class ControlClickExt
 {
 	public static IObservable<Unit> WhenClick(this Control ctrl) =>
 		Observable.FromEventPattern(e => ctrl.Click += e, e => ctrl.Click -= e).ToUnit();
