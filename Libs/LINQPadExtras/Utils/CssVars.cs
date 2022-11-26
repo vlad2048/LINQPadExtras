@@ -19,6 +19,7 @@ static class CssVars
 
 	public static string Get(string val, [CallerArgumentExpression(nameof(val))] string? valExpr = null)
 	{
+		ModuleInit.Check();
 		var varName = GetValName(valExpr);
 		if (varName == null || nonVarSet.Contains(varName)) return val;
 
