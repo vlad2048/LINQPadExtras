@@ -30,7 +30,7 @@ class Dlg : IDlg, IDisposable
 	private readonly Control root;
 	private readonly Div footerLeft;
 	private readonly Div footerRight;
-	private readonly ISubject<Unit> whenClosed;
+	private readonly ISubject<Unit> whenClosed = new AsyncSubject<Unit>();
 
 	public IObservable<Unit> WhenClosed => whenClosed.AsObservable();
 
@@ -48,7 +48,6 @@ class Dlg : IDlg, IDisposable
 		this.footerLeft = footerLeft;
 		this.footerRight = footerRight;
 
-		whenClosed = new AsyncSubject<Unit>().D(D);
 		var cancelSource = new CancellationTokenSource().D(D);
 		CancelToken = cancelSource.Token;
 

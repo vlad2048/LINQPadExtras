@@ -1,19 +1,64 @@
 ﻿using LINQPad.Controls;
+using LINQPad.FSharpExtensions;
 using LINQPadExtras.DialogLogic;
 using LINQPadExtras.DialogLogic.Enums;
 using LINQPadExtras.Utils.Exts;
 
 namespace LINQPadExtras.Scripting_Batcher;
 
+public class BatcherOpt
+{
+	public bool DryRun { get; set; }
+	public bool CmdLine { get; set; }
+
+	internal static BatcherOpt Build(Action<BatcherOpt>? optFun)
+	{
+		var opt = new BatcherOpt();
+		optFun?.Invoke(opt);
+		return opt;
+	}
+}
 
 public static class Batcher
 {
-	public static void Run(bool dryRun, string title, Action<ICmd> cmdFun)
+	public static void Run(string title, Action<ICmd> cmdFun, Action<BatcherOpt>? optFun = null)
 	{
+		var opt = BatcherOpt.Build(optFun);
 		Button cancelBtn = null!;
 		Button closeBtn = null!;
 
-		using var cmd = new Cmd(dryRun);
+		var cmdDisp = opt.CmdLine switch
+		{
+			true => (ICmdDisp)new ConCmdDisp(),
+			false => new GuiCmdDisp()
+		};
+		using var cmd = new Cmd(cmdDisp, opt.DryRun);
+
+
+		if (opt.CmdLine)
+		{
+			try
+			{
+				cmdFun(cmd);
+				cmd.LogArtifacts();
+			}
+			catch (OperationCanceledException)
+			{
+			}
+			if (cmd.IsCancelled)
+			{
+				if (!cmd.LeaveOpenAfter)
+				{
+					cmdDisp.LogError("Operation cancelled");
+
+					//Thread.Sleep(1000);
+					//dlg.Close();
+				}
+			}
+
+			return;
+		}
+
 
 		Dialoger.Run(
 			title,
@@ -44,7 +89,7 @@ public static class Batcher
 			},
 			dlg =>
 			{
-				cmd.DC = dlg.DC;
+				cmd.HookDC(dlg.DC);
 
 				try
 				{
@@ -58,10 +103,7 @@ public static class Batcher
 				{
 					if (!cmd.LeaveOpenAfter)
 					{
-						dlg.DC.AppendContent("\n");
-						var msgDiv = new Div(new Span("Operation cancelled")).SetForeColor(BatcherConsts.OperationCancelledMessageColor).Set("font-weight", "bold");
-						dlg.DC.AppendContent(msgDiv);
-						dlg.DC.AppendContent("\n");
+						cmdDisp.LogError("Operation cancelled");
 
 						Thread.Sleep(1000);
 						dlg.Close();

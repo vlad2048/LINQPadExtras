@@ -1,10 +1,8 @@
 ﻿using System.Text;
 using CliWrap;
 using LINQPad;
-using LINQPad.Controls;
 using LINQPadExtras.DialogLogic.Utils;
 using LINQPadExtras.Scripting_Batcher.Panels;
-using LINQPadExtras.Scripting_Batcher.Utils;
 using LINQPadExtras.Utils;
 using LINQPadExtras.Utils.Exts;
 using PowBasics.CollectionsExt;
@@ -35,6 +33,7 @@ class Cmd : ICmd, IDisposable
 	private readonly Disp d = new();
 	public void Dispose() => d.Dispose();
 
+	private readonly ICmdDisp disp;
 	private readonly bool dryRun;
 	private readonly CancellationTokenSource cancelSource;
 	private readonly CancellationToken cancelToken;
@@ -42,10 +41,15 @@ class Cmd : ICmd, IDisposable
 	private readonly List<string> artifacts = new();
 	private string? curDir;
 
-	
-
-	public Cmd(bool dryRun)
+	public void HookDC(IDCWrapper dc)
 	{
+		if (disp is not GuiCmdDisp guiDisp) throw new ArgumentException();
+		guiDisp.HookDC(dc);
+	}
+
+	public Cmd(ICmdDisp disp, bool dryRun)
+	{
+		this.disp = disp;
 		this.dryRun = dryRun;
 		cancelSource = new CancellationTokenSource().D(d);
 		cancelToken = cancelSource.Token;
@@ -58,7 +62,6 @@ class Cmd : ICmd, IDisposable
 	// ***********************************
 	public bool IsCancelled => cancelToken.IsCancellationRequested;
 	public bool LeaveOpenAfter { get; private set; }
-	public IDCWrapper DC { get; set; } = null!;
 	public void Cancel()
 	{
 		cancelSource.Cancel();
@@ -77,17 +80,7 @@ class Cmd : ICmd, IDisposable
 	public void LogArtifacts()
 	{
 		if (IsCancelled) return;
-
-		Log(" ");
-		Log($"{artifacts.Count} artifacts:");
-		for (var i = 0; i < artifacts.Count; i++)
-		{
-			var artifact = artifacts[i];
-			DC.AppendContent(Util.HorizontalRun(true,
-				new Div(new Span($"  [{i}]: ")),
-				new Hyperlinq(artifact.GetArtifactLink(), artifact)
-			));
-		}
+		disp.ShowArtifacts(artifacts);
 	}
 
 
@@ -95,11 +88,7 @@ class Cmd : ICmd, IDisposable
 	// **********
 	// * Public *
 	// **********
-	public void Log(string str)
-	{
-		var div = new Div(new Span(str)).StyleLogLine();
-		DC.AppendContent(div);
-	}
+	public void Log(string str) => disp.Log(str);
 
 	public void AddArtifact(string artifact)
 	{
@@ -114,43 +103,16 @@ class Cmd : ICmd, IDisposable
 	public void Cancel(string message)
 	{
 		LeaveOpenAfter = true;
-		DC.AppendContent("\n");
-		var msgDiv = new Div(new Span(message)).SetForeColor(BatcherConsts.OperationCancelledMessageColor).Set("font-weight", "bold");
-		DC.AppendContent(msgDiv);
-		DC.AppendContent("\n");
+		disp.LogError(message);
 		Cancel();
 	}
 
 	public void AskConfirmation(string message, Action? onCancel)
 	{
-		DC.AppendContent("\n");
-		var msgDiv = new Div(new Span(message)).SetForeColor(BatcherConsts.ConfirmationMessageColor);
-		DC.AppendContent(msgDiv);
-		DC.AppendContent("\n");
-
-		var btnYes = new Button("Yes") { CssClass = "modal-yesno-button modal-yesno-button-yes" }.MultiThread();
-		var btnNo = new Button("No") { CssClass = "modal-yesno-button modal-yesno-button-no" }.MultiThread();
-		var btnDiv = new Div(btnYes, btnNo) { CssClass = "modal-yesno-div" };
-		DC.AppendContent(btnDiv);
-
-		using var slim = new ManualResetEventSlim().D(d);
-		btnNo.WhenClick().Subscribe(_ =>
+		if (!disp.AskConfirmation(message, cancelToken))
 		{
 			onCancel?.Invoke();
 			Cancel();
-		}).D(d);
-		btnYes.WhenClick().Subscribe(_ =>
-		{
-			slim.Set();
-		}).D(d);
-
-		try
-		{
-			slim.Wait(cancelToken);
-		}
-		finally
-		{
-			btnYes.Enabled = btnNo.Enabled = false;
 		}
 	}
 
@@ -173,7 +135,7 @@ class Cmd : ICmd, IDisposable
 			true => CmdPanelMode.LogCmdOnly,
 		};
 		var panel = new CmdPanel(exeFile, cmd.Arguments, mode).D(d);
-		DC.AppendContent(panel.Root);
+		disp.AddCmdPanel(panel.Root);
 		if (dryRun) return;
 
 		try
@@ -203,7 +165,7 @@ class Cmd : ICmd, IDisposable
 		catch (CommandExecutionException ex)
 		{
 			panel.Complete(false);
-			DC.AppendContent(ex);
+			disp.LogException(ex);
 			throw;
 		}
 		catch (OperationCanceledException)
@@ -267,7 +229,6 @@ class Cmd : ICmd, IDisposable
 		var cmd = Cli.Wrap(exeFile)
 			.WithArguments(args);
 		cmdLines.Add($"{exeFile} {cmd.Arguments}");
-		using var panel = new CmdPanel(exeFile, cmd.Arguments, CmdPanelMode.LogCmdOnly);
-		DC.AppendContent(panel.Root);
+		disp.ShowCmd(exeFile, cmd.Arguments);
 	}
 }

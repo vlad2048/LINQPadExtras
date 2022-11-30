@@ -10,7 +10,6 @@ void Main()
 	var exe = Path.Combine(NativeMethods.GetLINQPadExtraRootFolder(), "Tools", "Cmder", "bin", "Debug", "net7.0", "Cmder.exe");
 	
 	Batcher.Run(
-		false,
 		"Running command",
 		cmd =>
 		{
