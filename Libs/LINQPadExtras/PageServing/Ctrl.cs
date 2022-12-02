@@ -12,20 +12,26 @@ public static class Ctrl
 {
 	public static CheckBox CheckBox(string text, IFullRwBndVar<bool> bndVar)
 	{
+		var d = GetD();
 		var ctrl = new CheckBox(text, bndVar.V);
 		var id = ctrl.InputControl.HtmlElement.ID;
 
 		// ClickInLINQPad -> SetInner
-		ctrl.WhenClick().Subscribe(_ => bndVar.SetInner(ctrl.Checked)).D(LINQPadServer.MasterD);
-
-		// ClickOnPage -> WhenChg -> SetOuter
-		LINQPadServer.WhenChg.Where(e => e.Type == ChgType.CheckBox && e.Id == id).Subscribe(chg => bndVar.SetOuter(bool.Parse(chg.Val))).D(LINQPadServer.MasterD);
+		ctrl.WhenClick().Subscribe(_ => bndVar.SetInner(ctrl.Checked)).D(d);
 
 		// WhenOuter -> UpdateCtrl
-		bndVar.WhenOuter.Subscribe(_val => ctrl.Checked = _val).D(LINQPadServer.MasterD);
+		bndVar.WhenOuter.Subscribe(_val => ctrl.Checked = _val).D(d);
+		
+		if (!LINQPadServer.IsStarted)
+		{
+			return ctrl;
+		}
+
+		// ClickOnPage -> WhenChg -> SetOuter
+		LINQPadServer.WhenChg.Where(e => e.Type == ChgType.CheckBox && e.Id == id).Subscribe(chg => bndVar.SetOuter(bool.Parse(chg.Val))).D(d);
 
 		// WhenOuter or Inner -> Refresh
-		bndVar.Subscribe(_ => LINQPadServer.SignalRefreshNeeded()).D(LINQPadServer.MasterD);
+		bndVar.Subscribe(_ => LINQPadServer.SignalRefreshNeeded()).D(d);
 
 
 		ctrl.InputControl.HtmlElement.SetAttribute("onchange", MakeSend(ChgType.CheckBox, id, "this.checked"));
@@ -36,20 +42,26 @@ public static class Ctrl
 
 	public static TextBox TextBox(IFullRwBndVar<string> bndVar)
 	{
+		var d = GetD();
 		var ctrl = new TextBox(bndVar.V);
 		var id = ctrl.HtmlElement.ID;
 
 		// ClickInLINQPad -> SetInner
-		ctrl.WhenTextInput().Subscribe(_ => bndVar.SetInner(ctrl.Text)).D(LINQPadServer.MasterD);
-
-		// ClickOnPage -> WhenChg -> SetOuter
-		LINQPadServer.WhenChg.Where(e => e.Type == ChgType.TextBox && e.Id == id).Subscribe(chg => bndVar.SetOuter(chg.Val)).D(LINQPadServer.MasterD);
+		ctrl.WhenTextInput().Subscribe(_ => bndVar.SetInner(ctrl.Text)).D(d);
 
 		// WhenOuter -> UpdateCtrl
-		bndVar.WhenOuter.Subscribe(_val => ctrl.Text = _val).D(LINQPadServer.MasterD);
+		bndVar.WhenOuter.Subscribe(_val => ctrl.Text = _val).D(d);
+
+		if (!LINQPadServer.IsStarted)
+		{
+			return ctrl;
+		}
+
+		// ClickOnPage -> WhenChg -> SetOuter
+		LINQPadServer.WhenChg.Where(e => e.Type == ChgType.TextBox && e.Id == id).Subscribe(chg => bndVar.SetOuter(chg.Val)).D(d);
 
 		// WhenOuter or Inner -> Refresh
-		bndVar.Subscribe(_ => LINQPadServer.SignalRefreshNeeded()).D(LINQPadServer.MasterD);
+		bndVar.Subscribe(_ => LINQPadServer.SignalRefreshNeeded()).D(d);
 
 
 		//ctrl.HtmlElement.SetAttribute("oninput", MakeSend(ChgType.TextBox, id, "this.value"));
@@ -87,9 +99,16 @@ public static class Ctrl
 
 	private static C HookClick<C>(this C ctrl, Action action) where C : Control
 	{
-		var id = ctrl.HtmlElement.ID;
-
+		var d = GetD();
 		ctrl.Styles["cursor"] = "pointer";
+
+		if (!LINQPadServer.IsStarted)
+		{
+			ctrl.WhenClick().Subscribe(_ => action()).D(d);
+			return ctrl;
+		}
+
+		var id = ctrl.HtmlElement.ID;
 
 		void ActionRefresh()
 		{
@@ -97,8 +116,8 @@ public static class Ctrl
 			LINQPadServer.SignalRefreshNeeded();
 		}
 
-		ctrl.WhenClick().Subscribe(_ => ActionRefresh()).D(LINQPadServer.MasterD);
-		LINQPadServer.WhenChg.Where(e => e.Type == ChgType.Click && e.Id == id).Subscribe(_ => ActionRefresh()).D(LINQPadServer.MasterD);
+		ctrl.WhenClick().Subscribe(_ => ActionRefresh()).D(d);
+		LINQPadServer.WhenChg.Where(e => e.Type == ChgType.Click && e.Id == id).Subscribe(_ => ActionRefresh()).D(d);
 
 		ctrl.HtmlElement.SetAttribute("onclick", MakeSend(ChgType.Click, id));
 
@@ -110,4 +129,6 @@ public static class Ctrl
 
 	private static string MakeSend(ChgType type, string id) =>
 		$$"""send('{{type}}', '{{id}}', null)""";
+
+	private static Disp GetD() => (Disp?)LINQPadServer.MasterD ?? new Disp();
 }

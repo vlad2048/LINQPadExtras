@@ -21,19 +21,7 @@ static Disp d = null!;
 
 void Main()
 {
-	/*AppDomain.CurrentDomain.FirstChanceException += (e, a) =>
-	{
-		var ex = a.Exception;
-		var msg = ex.Message;
-		if (!msg.StartsWith("The header")) return;
-		"=====================".Dump();
-		$"{DateTime.Now:HH:mm:ss.ffffff}".Dump();
-		ex.Dump();
-		ex.StackTrace.Dump();
-		"=====================".Dump();
-	};*/
-	
-	LINQPadServer.Start(opt => { opt.HtmlEditFolder = @"C:\Dev_Nuget\Libs\LINQPadExtras\_infos\cmp\ver0"; });
+	//LINQPadServer.Start(opt => { opt.HtmlEditFolder = @"C:\Dev_Nuget\Libs\LINQPadExtras\_infos\cmp\ver0"; });
 	Css.Init();
 	
 	d = new Disp();

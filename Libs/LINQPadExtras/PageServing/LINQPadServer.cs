@@ -32,6 +32,7 @@ public static class LINQPadServer
 	private static ISubject<Unit> whenRefreshNeeded = null!;
 	private static IObservable<Unit> WhenRefreshNeeded => whenRefreshNeeded.AsObservable();
 
+	internal static bool IsStarted { get; private set; }
 	internal static Disp MasterD => serD.Value!;
 	internal static IObservable<Chg> WhenChg { get; private set; } = null!;
 	internal static Tweaks Tweaks { get; private set; } = null!;
@@ -96,6 +97,7 @@ public static class LINQPadServer
 
 		var pageUrl = $"http://{PageBuilder.MachineName}:{opt.HttpPort}/";
 		MakeConnectionUI(server.WSState, pageUrl, opt.HtmlEditFolder, server).Dump();
+		IsStarted = true;
 	}
 
 	private static Control MakeConnectionUI(IRoVar<WSState> wsState, string pageUrl, string? htmlEditFolder, Server server)
