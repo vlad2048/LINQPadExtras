@@ -28,7 +28,6 @@
 	<ItemGroup>
 		<Folder Include="PageServing\Components\" />
 		<Folder Include="PageServing\Structs\" />
-		<Folder Include="PageServing\Utils\HtmlUtils\" />
 		<Folder Include="PageServing\Utils\Exts\" />
 		<Folder Include="Scripting_Batcher\Panels\Ctrls\" />
 		<Folder Include="Scripting_Batcher\Utils\" />

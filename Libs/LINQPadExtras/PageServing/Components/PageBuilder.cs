@@ -4,36 +4,6 @@ using LINQPadExtras.PageServing.Utils.HtmlUtils;
 
 namespace LINQPadExtras.PageServing.Components;
 
-/*class Syncers
-{
-	private readonly Dictionary<string, ISyncer> syncers = new();
-	private readonly List<ITweaker> tweakers = new();
-	public ISyncer GetSyncer(string type) => syncers[type];
-	public ITweaker[] GetTweakers() => tweakers.ToArray();
-	public void AddSyncers(params ISyncer[] pSyncers)
-	{
-		foreach (var syncer in pSyncers)
-		{
-			syncers[syncer.Type] = syncer;
-			tweakers.Add(syncer);
-		}
-	}
-	public void AddTweaker(ITweaker tweaker) => tweakers.Add(tweaker);
-}*/
-
-class Tweaks
-{
-	private readonly Dictionary<string, Action<HtmlNode>> tweakMap = new();
-
-	public void SetTweak(string id, Action<HtmlNode> action) => tweakMap[id] = action;
-
-	public Action<HtmlNode>? GetTweakOpt(string id) => tweakMap.TryGetValue(id, out var action) switch
-	{
-		true => action,
-		false => null
-	};
-}
-
 class PageBuilder
 {
 	private const string RefreshStatusId = "refresh-status";
@@ -58,14 +28,14 @@ class PageBuilder
 
 	public string GetTweakedHead()
 	{
-		var head = HtmlPageReadingUtils.GetHead();
-		var tweakedHead = scriptTracker.TweakHead(head);
+		var head = HtmlDocUtils.GetHead();
+		var tweakedHead = scriptTracker.TweakHead(head, JSRefreshLogic(wsPort));
 		return tweakedHead;
 	}
 
 	public string GetTweakedBody()
 	{
-		var bodyHtml = HtmlPageReadingUtils.GetBody();
+		var bodyHtml = HtmlDocUtils.GetBody();
 		var doc = new HtmlDocument();
 		doc.LoadHtml(bodyHtml);
 		HtmlNode? nodeToRemove = null;
@@ -84,6 +54,8 @@ class PageBuilder
 		return doc.DocumentNode.OuterHtml;
 	}
 	
+					
+	// {JSRefreshLogic(wsPort)}
 	public string BuildWholePage()
 	{
 		var head = GetTweakedHead();
@@ -93,7 +65,6 @@ class PageBuilder
 			<html>
 				<head>
 					{head}
-					{JSRefreshLogic(wsPort)}
 				</head>
 				<body>
 					{HtmlRefreshUI}
@@ -141,7 +112,6 @@ class PageBuilder
 		""";
 
 	private static string JSRefreshLogic(int wsPort) => $$"""
-		<script>
 			const socketUrl = "ws://{{MachineName}}:{{wsPort}}/refresh";
 			let closeCode = -1;
 			let closeWasClean = false;
@@ -209,8 +179,5 @@ class PageBuilder
 				const str = JSON.stringify({ type, id, val });
 				socket.send(str);
 			}
-
-
-		</script>
-""";
+			""";
 }

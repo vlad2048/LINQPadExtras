@@ -5,7 +5,7 @@ using LINQPad;
 
 namespace LINQPadExtras.PageServing.Utils.HtmlUtils;
 
-static class HtmlPageReadingUtils
+public static class HtmlDocUtils
 {
 	public static string GetHead() => ((string)Util.InvokeScript(true, "eval", "document.head.outerHTML")).ExtractInnerHtml();
 	

@@ -166,6 +166,12 @@ class Server : IDisposable
 		"extra.css",
 	};
 
+	private static readonly string[] foldersToKeep =
+	{
+		".vscode",
+		"node_modules",
+	};
+
 	public void EditHtml(string folder)
 	{
 		if (string.IsNullOrEmpty(folder)) return;
@@ -177,7 +183,16 @@ class Server : IDisposable
 			if (File.Exists(fullFilename))
 				File.Delete(fullFilename);
 		}
+
+		var foldersToDelete = Directory.GetDirectories(folder);
+		foreach (var folderToDelete in foldersToDelete)
+		{
+			if (!foldersToKeep.Contains(Path.GetFileName(folderToDelete)))
+				Directory.Delete(folderToDelete, true);
+		}
+
 		var page = pageBuilder.BuildWholePage();
+
 		var pageFile = Path.Combine(folder, "index.html");
 		File.WriteAllText(pageFile, page);
 		scriptTracker.WriteAllToFolder(folder);

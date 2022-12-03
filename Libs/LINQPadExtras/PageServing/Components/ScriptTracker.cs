@@ -19,14 +19,18 @@ class ScriptTracker
 		public string Filename => Link.Link2Path();
 	}
 
+	private ScriptNfo? refreshScript = null;
+
 	private readonly List<ScriptNfo> scripts = new();
 
 
-	public string TweakHead(string headHtml)
+	public string TweakHead(string headHtml, string jsRefreshLogic)
 	{
 		var doc = new HtmlDocument();
 		doc.LoadHtml(headHtml);
 		var root = doc.DocumentNode;
+
+		refreshScript = new ScriptNfo("js/refresh.js", ScriptType.Js, jsRefreshLogic);
 
 		var nodes = root.ChildNodes.Where(e => e.IsCssNode() || e.IsJsNode()).ToArray();
 		var links = nodes.GetLinks();
@@ -56,6 +60,9 @@ class ScriptTracker
 			node.Remove();
 		}
 
+		var refreshNodeLink = HtmlNode.CreateNode($"""<link href="{ refreshScript.Link} "/>""" );
+		root.ChildNodes.Append(refreshNodeLink);
+
 		foreach (var script in scripts)
 		{
 			var nodeHtml = script.Type switch
@@ -72,11 +79,17 @@ class ScriptTracker
 	}
 
 
-	public bool CanRespond(string url) => scripts.Any(e => e.Link == url);
+	public bool CanRespond(string url) =>
+		(refreshScript != null && url == refreshScript.Link) ||
+		scripts.Any(e => url == e.Link);
 
 	public async Task Respond(string url, HttpListenerResponse resp)
 	{
-		var nfo = scripts.Single(e => e.Link == url);
+		var nfo = (refreshScript != null && url == refreshScript.Link) switch
+		{
+			true => refreshScript!,
+			false => scripts.Single(e => url == e.Link)
+		};
 		var data = Encoding.UTF8.GetBytes(nfo.Content);
 		resp.ContentType = nfo.Type switch
 		{
@@ -91,6 +104,14 @@ class ScriptTracker
 
 	public void WriteAllToFolder(string rootFolder)
 	{
+		if (refreshScript != null)
+		{
+			var file = Path.Combine(rootFolder, refreshScript.Filename).CreateFolderForFileIFN();
+			var content = refreshScript.Content
+				.Replace("connectSocket();", "// connectSocket();");
+			File.WriteAllText(file, content);
+		}
+
 		foreach (var nfo in scripts)
 		{
 			var file = Path.Combine(rootFolder, nfo.Filename).CreateFolderForFileIFN();
