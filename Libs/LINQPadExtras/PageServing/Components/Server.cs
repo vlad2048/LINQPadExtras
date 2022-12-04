@@ -3,11 +3,9 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 using LINQPad;
 using LINQPadExtras.PageServing.Structs;
 using LINQPadExtras.PageServing.Utils;
-using LINQPadExtras.PageServing.Utils.Exts;
 using PowMaybe;
 using PowRxVar;
 using WebSocketSharp;
@@ -39,10 +37,8 @@ class Server : IDisposable
 
 	private readonly int httpPort;
 	private readonly HttpListener listener;
+	private readonly ServerReplier replier;
 	private readonly WebSocketServer wsServer;
-	private readonly ImageFixer imageFixer;
-	private readonly ScriptTracker scriptTracker;
-	private readonly PageBuilder pageBuilder;
 	private readonly ISubject<Chg> whenChg;
 	private RefreshBehavior? refresh;
 	private bool isStarted;
@@ -52,12 +48,10 @@ class Server : IDisposable
 	public void SendData(string data) => refresh?.SendData(data);
 
 
-	public Server(ImageFixer imageFixer, ScriptTracker scriptTracker, PageBuilder pageBuilder, int httpPort, int wsPort)
+	public Server(ServerReplier replier, int httpPort, int wsPort)
 	{
 		this.httpPort = httpPort;
-		this.imageFixer = imageFixer;
-		this.scriptTracker = scriptTracker;
-		this.pageBuilder = pageBuilder;
+		this.replier = replier;
 		Disposable.Create(Stop).D(d);
 		var wsStateVar = Var.Make(Var.Make(new WSState(
 			WebSocketState.Closed,
@@ -67,7 +61,6 @@ class Server : IDisposable
 		WSState = wsStateVar.SwitchVar(e => e);
 		whenChg = new Subject<Chg>().D(d);
 		wsServer = new WebSocketServer(wsPort);
-		//wsServer.Log.Level = LogLevel.Trace;
 		wsServer.Log.Level = LogLevel.Fatal + 1;
 		listener = new HttpListener().D(d);
 
@@ -79,15 +72,6 @@ class Server : IDisposable
 			refresh = _refresh;
 			wsStateVar.V = refresh.WSState;
 			refresh.WhenChg.Subscribe(chg => whenChg.OnNext(chg)).D(d);
-			refresh.WhenClose.Subscribe(_ =>
-			{
-				//"[WS Restart in a few secs]".Dump();
-				Observable.Timer(TimeSpan.FromSeconds(3)).Subscribe(_ =>
-				{
-					//wsServer.Stop();
-					//wsServer.Start();
-				}).D(d);
-			}).D(d);
 		});
 	}
 	
@@ -123,29 +107,12 @@ class Server : IDisposable
 				var resp = ctx.Response;
 				if (req.Url == null) throw new ArgumentException();
 				var url = req.Url.AbsolutePath;
-				var urlRel = url.RemoveLeadingSlash();
-				//$"[req]: '{url}'".Dump();
-				if (url == "/")
-				{
-					var page = pageBuilder.BuildWholePage();
-					var data = Encoding.UTF8.GetBytes(page);
-					resp.ContentType = "text/html";
-					resp.ContentEncoding = Encoding.UTF8;
-					resp.ContentLength64 = data.LongLength;
-					await resp.OutputStream.WriteAsync(data, 0, data.Length);
-				}
-				else if (ImageFixer.IsImageUrl(urlRel))
-				{
-					var imageFile = imageFixer.GetFileFromUrl(urlRel);
-					var bytes = await File.ReadAllBytesAsync(imageFile);
-					resp.ContentType = GetImageContentType(imageFile);
-					resp.ContentLength64 = bytes.Length;
-					await resp.OutputStream.WriteAsync(bytes, 0, bytes.Length);
-				}
-				else if (scriptTracker.CanRespond(urlRel))
-				{
-					await scriptTracker.Respond(urlRel, resp);
-				}
+
+				var reply = await replier.Reply(url);
+
+				if (reply.Type != ReplyType.None)
+					await reply.Write(resp);
+
 				resp.Close();
 			}
 		});
@@ -158,45 +125,6 @@ class Server : IDisposable
 		isStarted = false;
 		listener.Stop();
 		wsServer.Stop();
-	}
-
-	private static readonly string[] filesToDelete =
-	{
-		"linqpad.css",
-		"extra.css",
-	};
-
-	private static readonly string[] foldersToKeep =
-	{
-		".vscode",
-		"node_modules",
-	};
-
-	public void EditHtml(string folder)
-	{
-		if (string.IsNullOrEmpty(folder)) return;
-		folder.CreateFolderIFN();
-
-		foreach (var fileToDelete in filesToDelete)
-		{
-			var fullFilename = Path.Combine(folder, fileToDelete);
-			if (File.Exists(fullFilename))
-				File.Delete(fullFilename);
-		}
-
-		var foldersToDelete = Directory.GetDirectories(folder);
-		foreach (var folderToDelete in foldersToDelete)
-		{
-			if (!foldersToKeep.Contains(Path.GetFileName(folderToDelete)))
-				Directory.Delete(folderToDelete, true);
-		}
-
-		var page = pageBuilder.BuildWholePage();
-
-		var pageFile = Path.Combine(folder, "index.html");
-		File.WriteAllText(pageFile, page);
-		scriptTracker.WriteAllToFolder(folder);
-		imageFixer.WriteAllToFolder(folder);
 	}
 
 	private static string GetImageContentType(string file) =>

@@ -1,5 +1,4 @@
 ﻿using LINQPad.Controls;
-using LINQPad.FSharpExtensions;
 using LINQPadExtras.DialogLogic;
 using LINQPadExtras.DialogLogic.Enums;
 using LINQPadExtras.Utils.Exts;

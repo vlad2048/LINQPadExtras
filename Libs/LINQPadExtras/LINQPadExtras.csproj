@@ -27,6 +27,7 @@
 
 	<ItemGroup>
 		<Folder Include="PageServing\Components\" />
+		<Folder Include="PageServing\PageLogic\Transformers\Base\" />
 		<Folder Include="PageServing\Structs\" />
 		<Folder Include="PageServing\Utils\Exts\" />
 		<Folder Include="Scripting_Batcher\Panels\Ctrls\" />

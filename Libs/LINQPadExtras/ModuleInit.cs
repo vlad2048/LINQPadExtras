@@ -113,15 +113,10 @@ static class ModuleInit
 		.modal-inner {
 			/* Outer */
 			margin: auto 0; padding: 10px;
-			/*width: 100%; height: 300px;
-			max-width: 400px;*/
 			max-width: calc(100% - 80px);
 			max-height: calc(100% - 80px);
 			flex: 0 1 auto;
 			/* Inner */
-			/*display: grid;
-			grid-template-rows: auto 1fr auto;
-			gap: var(--modal-gap);*/
 			display: flex;
 			flex-direction: column;
 			row-gap: var(--modal-gap);

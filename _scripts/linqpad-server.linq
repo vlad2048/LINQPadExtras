@@ -21,7 +21,7 @@ static Disp d = null!;
 
 void Main()
 {
-	LINQPadServer.Start(opt => { opt.HtmlEditFolder = @"C:\Dev_Nuget\Libs\LINQPadExtras\_infos\design"; });
+	LINQPadServer.Start(opt => { opt.HtmlEditFolder = @"C:\tmp\inspect"; });
 	Css.Init();
 	
 	d = new Disp();

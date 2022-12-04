@@ -31,7 +31,7 @@ public static class LockChecker
 	private record Lock(string Folder, ProcNfo Proc)
 	{
 		public bool Killed { get; set; }
-		public Button KillBtn { get; set; }
+		public Button KillBtn { get; set; } = null!;
 	}
 
 	public static bool CheckFolders(params string[] folders)

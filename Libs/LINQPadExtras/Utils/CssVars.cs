@@ -3,6 +3,11 @@ using LINQPad;
 
 namespace LINQPadExtras.Utils;
 
+public static class CssVar
+{
+	public static string Get(string val, [CallerArgumentExpression(nameof(val))] string? valExpr = null) => CssVars.Get(val, valExpr);
+}
+
 static class CssVars
 {
 	private static readonly Dictionary<string, string> varMap = new();

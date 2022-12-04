@@ -4,6 +4,17 @@ namespace LINQPadExtras.PageServing.Utils.HtmlUtils;
 
 static class HtmlNodeUtils
 {
+	public static void ForEachNode(this HtmlNode root, Action<HtmlNode> action)
+	{
+		void Recurse(HtmlNode n)
+		{
+			action(n);
+			foreach (var childN in n.ChildNodes)
+				Recurse(childN);
+		}
+		Recurse(root);
+	}
+
 	public static void ForEachNode(this HtmlDocument doc, Action<HtmlNode> action)
 	{
 		void Recurse(HtmlNode n)
@@ -14,6 +25,12 @@ static class HtmlNodeUtils
 		}
 		Recurse(doc.DocumentNode);
 	}
+
+	public static HtmlNode FindNodeByName(this HtmlNode root, string name) =>
+		root.FindNodes(e => e.Name == name)[0];
+
+	public static HtmlNode FindNodeById(this HtmlNode root, string id) =>
+		root.FindNodes(e => e.Id == id)[0];
 
 	public static HtmlNode[] FindNodes(this HtmlNode root, Func<HtmlNode, bool> predicate)
 	{

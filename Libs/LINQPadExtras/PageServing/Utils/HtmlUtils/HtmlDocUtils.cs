@@ -1,15 +1,43 @@
 ﻿using AngleSharp.Html;
 using AngleSharp.Html.Parser;
-using HtmlAgilityPack;
-using LINQPad;
+using LINQPadExtras.PageServing.Components;
+using LINQPadExtras.PageServing.PageLogic;
+using LINQPadExtras.PageServing.PageLogic.Transformers;
+using LINQPadExtras.PageServing.PageLogic.Transformers.Base;
 
 namespace LINQPadExtras.PageServing.Utils.HtmlUtils;
 
 public static class HtmlDocUtils
 {
-	public static string GetHead() => ((string)Util.InvokeScript(true, "eval", "document.head.outerHTML")).ExtractInnerHtml();
-	
-	public static string GetBody() => ((string)Util.InvokeScript(true, "eval", "document.body.outerHTML")).ExtractInnerHtml();
+	public static void SavePage(string folder)
+	{
+		var replier = new ServerReplier();
+
+		var mutator = new PageMutator(
+
+			LINQPadServer.GetSaveTransformers().Concat(
+				Tr(
+					new ImageFixerTransformer(replier),
+					
+					new CssScriptExtractionTransformer(replier, o =>
+					{
+						o.PredefinedNames.AddRange(new[] { "linqpad", "reset", "look" });
+						o.GroupRestInLastName = true;
+					}),
+
+					new JsScriptExtractionTransformer(replier, o =>
+					{
+						o.PredefinedNames.Add("linqpad");
+					})
+				)
+			)
+			.ToArray()
+		);
+
+		PageSaver.Save(folder, mutator, replier);
+	}
+
+	private static ITransformer[] Tr(params ITransformer[] transformers) => transformers;
 
 
 	public static string Beautify(this string html, bool body)
@@ -40,12 +68,5 @@ public static class HtmlDocUtils
 			var formattedHtml = writer.ToString();
 			return formattedHtml;
 		}
-	}
-
-	private static string ExtractInnerHtml(this string html)
-	{
-		var doc = new HtmlDocument();
-		doc.LoadHtml(html);
-		return doc.DocumentNode.ChildNodes[0].InnerHtml.Trim().Beautify(true);
 	}
 }
