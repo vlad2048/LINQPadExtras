@@ -6,6 +6,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="PageServing\**" />
+	  <EmbeddedResource Remove="PageServing\**" />
+	  <None Remove="PageServing\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Reference Include="LINQPad.Runtime">
 			<HintPath>..\..\..\..\..\Program Files\LINQPad7\LINQPad.Runtime.dll</HintPath>
 		</Reference>
@@ -26,10 +32,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="PageServing\Components\" />
-		<Folder Include="PageServing\PageLogic\Transformers\Base\" />
-		<Folder Include="PageServing\Structs\" />
-		<Folder Include="PageServing\Utils\Exts\" />
 		<Folder Include="Scripting_Batcher\Panels\Ctrls\" />
 		<Folder Include="Scripting_Batcher\Utils\" />
 		<Folder Include="Utils\Exts\" />

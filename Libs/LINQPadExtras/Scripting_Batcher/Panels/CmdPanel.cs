@@ -58,6 +58,12 @@ class CmdPanel : IDisposable
 				.WithClass("cmdpanel");
 
 		WhenComplete
+			.Subscribe(_ =>
+			{
+				statusBtn.State.V = StatusState.Open;
+			}).D(d);
+
+		WhenComplete
 			.Delay(TimeSpan.FromSeconds(3))
 			.Subscribe(success =>
 			{

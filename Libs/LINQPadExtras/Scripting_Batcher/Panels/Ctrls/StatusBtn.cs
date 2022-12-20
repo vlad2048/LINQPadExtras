@@ -27,7 +27,6 @@ class StatusBtn : IDisposable
 	public StatusBtn(bool isNone)
 	{
 		State = Var.Make(isNone ? StatusState.None : StatusState.Running).D(d);
-		//Root = new DumpContainer().SetForeColor(StatusBtnConsts.StatusCol);
 
 		var dc = new DumpContainer();
 		Root = new Div(dc).WithClass("cmdpanel-header-statusbtn");

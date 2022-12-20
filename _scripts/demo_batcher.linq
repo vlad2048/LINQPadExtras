@@ -13,13 +13,15 @@ void Main()
 		"Running command",
 		cmd =>
 		{
-			for (var i = 0; i < 20; i++)
+			/*for (var i = 0; i < 20; i++)
 			{
 				cmd.Log($"Item_{i}");
 				//Thread.Sleep(100);
-			}
+			}*/
 			
-			//cmd.Run(exe, "500", "0");
+			cmd.Run(exe, "50", "0");
+			cmd.Run(exe, "100", "0");
+			cmd.Run(exe, "50", "0");
 		}
 	);
 }

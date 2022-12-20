@@ -6,6 +6,7 @@
   <Namespace>LINQPadExtras</Namespace>
   <Namespace>LINQPadExtras.DialogLogic</Namespace>
   <Namespace>System.Runtime.CompilerServices</Namespace>
+  <Namespace>LINQPadExtras.DialogLogic.Enums</Namespace>
 </Query>
 
 const string file = @"C:\tmp\dd\lock.txt";
