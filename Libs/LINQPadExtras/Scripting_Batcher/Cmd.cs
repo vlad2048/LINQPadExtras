@@ -202,7 +202,7 @@ class Cmd : ICmd, IDisposable
 
 		Directory.CreateDirectory(folder);
 	}
-
+	
 	public void DeleteFolder(string folder)
 	{
 		if (IsCancelled) return;
@@ -218,8 +218,16 @@ class Cmd : ICmd, IDisposable
 		if (IsCancelled) return;
 		if (!Directory.Exists(folder)) return;
 		if (Directory.GetFileSystemEntries(folder).Length == 0) return;
-		DeleteFolder(folder);
-		MakeFolder(folder);
+		// TODO: find how to do that on the cmd line
+		//DeleteFolder(folder);
+		//MakeFolder(folder);
+		ShowAndAddCmd("empty-folder", folder);
+		var dirs = Directory.GetDirectories(folder);
+		var files = Directory.GetFiles(folder);
+		foreach (var dir in dirs)
+			Directory.Delete(dir, true);
+		foreach (var file in files)
+			File.Delete(file);
 	}
 
 
