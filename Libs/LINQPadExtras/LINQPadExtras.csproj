@@ -6,12 +6,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Remove="PageServing\**" />
-		<EmbeddedResource Remove="PageServing\**" />
-		<None Remove="PageServing\**" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Reference Include="LINQPad.Runtime">
 			<HintPath>..\..\..\..\..\Program Files\LINQPad7\LINQPad.Runtime.dll</HintPath>
 		</Reference>
